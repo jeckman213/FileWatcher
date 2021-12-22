@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Stdout Watcher</title>
+    </head>
+    
+    <style>
+        html {
+            min-height: 100%;
+            position: relative;
+        }
+        body {
+            background-color: black;
+            background-image: radial-gradient(rgba(80, 80, 80, 0.75), black 120%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+            color: white;
+            font: 1rem Inconsolata, monospace;
+            text-shadow: 0 0 5px #C8C8C8;
+            overflow: scroll;
+            height: 100%;
+        }
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15) 1px, transparent 1px, transparent 2px);
+            pointer-events: none;
+        }
+
+        ::selection {
+            background: #0080FF;
+            text-shadow: none;
+        }
+
+        pre {
+            margin: 0;
+        }
+    </style>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Socket init
+        var socket = io.connect('http://localhost:3030', {reconnect: true});
+
+        // Previous Length init
+        var previousLength = 0;
+
+        // Socket listener
+        socket.on('stdout', (data = []) => {
+            // Grab only what we need out of all lines
+            let newData = data.slice(previousLength, data.length);
+
+            // Determine timeout
+            let timeout = 500;
+            if (previousLength === 0 && data.length > 1) {
+                timeout = 0;
+            }
+
+            // Loop through new lines
+            newData.forEach((line, i) => {
+                // No empties
+                // if (line === "") return;
+
+                // Create new pre element
+                let newElement = document.createElement("pre");
+
+                // Create new output element and add text
+                let innerElement = document.createElement("output");
+                innerElement.innerHTML = `${previousLength + i}\t${line}`;
+
+                // Append output to pre
+                newElement.appendChild(innerElement);
+
+                // Append pre to div#stdout with timeout?
+                setTimeout(() => document.getElementById("stdout").appendChild(newElement), timeout * i);
+            });
+            
+            // Set previousLength to only grab what we need
+            previousLength = data.length;
+        });
+    </script>
+
+    <body>
+        <h1>Stdout Watcher</h1>
+        <div id="stdout">
+
+        </div>
+    </body>
+</html>
